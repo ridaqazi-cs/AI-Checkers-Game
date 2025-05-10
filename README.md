@@ -4,7 +4,7 @@ This is a fully functional Checkers game implemented in **Python** using **Pygam
 
 ---
 
-## 🎮 Game Features
+## Game Features
 
 - ✅ Human vs AI, Human vs Human, and AI vs AI modes  
 - ✅ Multiple difficulty levels: Easy, Medium, Hard  
@@ -15,7 +15,7 @@ This is a fully functional Checkers game implemented in **Python** using **Pygam
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 1. Clone or download this repository.
 2. Ensure you have `q_black.pkl` and `q_red.pkl` in the same folder.
@@ -27,9 +27,9 @@ python main.py
 
 ---
 
-## 🕹️ How to Play
+## How to Play
 
-### 🎛️ Main Menu
+### Main Menu
 When the game launches:
 
 - Press:
@@ -44,7 +44,7 @@ When the game launches:
 
 The game begins once both are selected.
 
-### 👤 Human Player Controls
+### Human Player Controls
 
 - Click a piece of your color to select it.
 - Valid destinations will be **highlighted in green**.
@@ -52,7 +52,7 @@ The game begins once both are selected.
 - Captures are forced if available.
 - Multi-jumps are automatically handled.
 
-### 🤖 AI Behavior
+### AI Behavior
 
 - Uses **Q-learning** to learn optimal moves.
 - Difficulty affects randomness:
@@ -62,7 +62,7 @@ The game begins once both are selected.
 
 ---
 
-## 📊 Statistics Dashboard
+## Statistics Dashboard
 
 At the top-left of the screen:
 - 🕹️ Games Played  
@@ -72,7 +72,7 @@ At the top-left of the screen:
 
 ---
 
-## 🏁 Game Over
+## Game Over
 
 When a side wins:
 
@@ -83,32 +83,36 @@ When a side wins:
 
 ---
 
-## 📁 File Structure
+## File Structure
 
 ```
-├── main.py             # Main game loop & GUI
-├── ai.py               # Q-learning agent
-├── board.py            # Board logic
-├── piece.py            # Piece logic
-├── q_black.pkl         # AI knowledge (black side)
-├── q_red.pkl           # AI knowledge (red side)
+├── main.py                   # Main game loop & GUI
+├── ai.py                     # Q-learning agent
+├── board.py                  # Board logic
+├── piece.py                  # Piece logic
+├── q_black.pkl               # AI knowledge (black side)
+├── q_red.pkl                 # AI knowledge (red side)
+├── README.md                 # How to use
+├── Project Report.pdf        # Workings and findings
+├── Project Proposal.docx     # Initial proposal 
+├── Demo.mp4                  # Recorded voiceover 
 ```
 
 ---
 
-## 🧠 How Q-Learning Works
+## How Q-Learning Works
 
 - The board is encoded as a string state.
 - Actions like `2,3->3,4` represent piece moves.
 - Rewards:
-  - +0.2 for captures
-  - +1.0 for winning
-  - -1.0 for losing
+  - +10 for captures
+  - +100 for winning
+  - -100 for losing
 - Values are updated with the **Bellman equation**.
 
 ---
 
-## 💡 Possible Improvements
+## Possible Improvements
 
 - Add save/load feature  
 - Add sound effects  
@@ -118,7 +122,7 @@ When a side wins:
 
 ---
 
-## 👥 Team Members
+## Team Members
 
 - **Rida Qazi** – 22k-4409  
 - **Mashal Jawed** – 22k-4552  
