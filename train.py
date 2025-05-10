@@ -68,4 +68,4 @@ def self_play(episodes=5000):
     print("Training complete. Q-tables saved.")
 
 if __name__ == "__main__":
-    self_play(episodes=2000)  # adjust count as you like
+    self_play(episodes=20000)  # adjust count as you like
