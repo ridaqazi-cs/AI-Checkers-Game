@@ -62,6 +62,8 @@ class Board:
         For a given Piece, return a dict mapping
         destination (row,col) → list of jumped-over coordinates (empty list if a non-capture move).
         """
+        if piece is None:
+            return {}
         moves = {}
         directions = []
         # Regular men move “forward” only
