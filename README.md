@@ -1,6 +1,6 @@
-# 🧠 AI Checkers Game with Reinforcement Learning
+# AI Checkers Game with Reinforcement Learning
 
-This is a fully functional Checkers game implemented in **Python** using **Pygame**. It includes an **AI opponent powered by Q-learning**, a form of reinforcement learning. The AI can improve its gameplay via self-play and supports multiple difficulty levels, game modes, and a live stats dashboard.
+This is a fully functional Checkers game implemented in **Python** using **Pygame**. It includes an **AI opponent powered by Q-learning**, a form of reinforcement learning. The AI can improve its gameplay via training and supports multiple difficulty levels, game modes, and a live stats dashboard.
 
 ---
 
@@ -8,24 +8,10 @@ This is a fully functional Checkers game implemented in **Python** using **Pygam
 
 - ✅ Human vs AI, Human vs Human, and AI vs AI modes  
 - ✅ Multiple difficulty levels: Easy, Medium, Hard  
-- ✅ Self-play training mode for reinforcement learning  
+- ✅ Training for reinforcement learning  
 - ✅ Live statistics dashboard: win/loss/tie count and average moves  
 - ✅ Turn indicators and endgame messages  
 - ✅ Graphical menu for mode and difficulty selection
-
----
-
-## 🖥️ Requirements
-
-- Python 3.9+
-- Pygame  
-- Numpy
-
-Install dependencies:
-
-```bash
-pip install pygame numpy
-```
 
 ---
 
@@ -52,9 +38,9 @@ When the game launches:
   - `3` → AI vs AI
   - `4` → Training Mode
 - Then press:
-  - `E` → Easy AI
-  - `M` → Medium AI
-  - `H` → Hard AI
+  - `e` → Easy AI
+  - `m` → Medium AI
+  - `h` → Hard AI
 
 The game begins once both are selected.
 
@@ -94,18 +80,6 @@ When a side wins:
 - Press:
   - `R` to restart
   - `Q` to quit
-
----
-
-## 🧪 Self-Play Training Mode
-
-To let AI play against itself:
-
-1. From the menu, press `4` for **Training Mode**.
-2. AI will learn by playing multiple episodes.
-3. Use `.save()` methods in `ai.py` to save new Q-tables for stronger play.
-
-> You can tweak the number of episodes and reward logic in the training loop for better performance.
 
 ---
 
@@ -149,9 +123,3 @@ To let AI play against itself:
 - **Rida Qazi** – 22k-4409  
 - **Mashal Jawed** – 22k-4552  
 - **Abdul Wasey** – 22k-4172  
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License**.
