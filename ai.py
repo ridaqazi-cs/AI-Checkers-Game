@@ -1,175 +1,127 @@
-# board.py
-import pygame
-from piece import Piece
+# ai.py
+import random
+import pickle
 
-# colors (you can tweak these or import from a constants module)
-WHITE = (245, 245, 245)
-GRAY  = ( 50,  50,  50)
-RED_COLOR   = (200,  50,  50)
-BLACK_COLOR = ( 30,  30,  30)
-GOLD = (255, 215,  0)
+class QLearningAgent:
+    def __init__(self, color,
+                 alpha=0.1, gamma=0.9,
+                 epsilon=1.0, epsilon_min=0.05,
+                 epsilon_decay=0.995):
+        self.color = color
+        self.Q = {}  # state_str -> {action_str: Q-value}
+        self.alpha = alpha
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
 
-class Board:
-    def __init__(self, rows=8, cols=8):
-        self.rows = rows
-        self.cols = cols
-        # 2D list: None or a Piece instance
-        self.grid = [[None for _ in range(cols)] for _ in range(rows)]
-        self._setup_pieces()
+    def get_state(self, board):
+        """Encode board to a state string."""
+        return board.encode_state()
 
-    def _setup_pieces(self):
-        """Place the 12 red and 12 black pieces on starting squares."""
-        for r in range(self.rows):
-            for c in range(self.cols):
-                # only place on dark squares (where (r+c)%2 != 0)
-                if (r + c) % 2 == 0:
-                    continue
-                if r < 3:
-                    # top three rows: black
-                    self.grid[r][c] = Piece(r, c, "black")
-                elif r > 4:
-                    # bottom three rows: red
-                    self.grid[r][c] = Piece(r, c, "red")
-                # rows 3 and 4 remain empty
-
-    def draw(self, surface):
-        """Draw the checkerboard and pieces onto the given Pygame surface."""
-        tile_size = surface.get_width() // self.cols
-        # draw squares
-        for r in range(self.rows):
-            for c in range(self.cols):
-                color = WHITE if (r + c) % 2 == 0 else GRAY
-                rect = (c * tile_size, r * tile_size, tile_size, tile_size)
-                pygame.draw.rect(surface, color, rect)
-
-        # draw pieces
-        for r in range(self.rows):
-            for c in range(self.cols):
-                piece = self.grid[r][c]
-                if piece:
-                    center = (c * tile_size + tile_size//2,
-                              r * tile_size + tile_size//2)
-                    radius = tile_size//2 - 8
-                    col = RED_COLOR if piece.color == "red" else BLACK_COLOR
-                    pygame.draw.circle(surface, col, center, radius)
-                    if piece.king:
-                        # draw a smaller gold circle to mark kings
-                        pygame.draw.circle(surface, GOLD, center, radius//2)
-
-    # (Later you’ll add move logic, valid-move generation, etc.)
-    def get_valid_moves(self, piece):
+    def available_actions(self, board):
         """
-        For a given Piece, return a dict mapping
-        destination (row,col) → list of jumped-over coordinates (empty list if a non-capture move).
+        Return a list of action_str for this agent:
+        each action_str is "sr,sc->dr,dc"
         """
-        moves = {}
-        directions = []
-        # Regular men move “forward” only
-        if piece.color == "red":
-            directions = [(-1, -1), (-1, 1)]
-        else:  # black
-            directions = [(1, -1), (1, 1)]
-        # Kings move both ways
-        if piece.king:
-            directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        must_capture = board.has_capture(self.color)
+        acts = []
+        for piece in board.get_all_pieces(self.color):
+            moves = board.get_valid_moves(piece)
+            if must_capture:
+                moves = {dst: caps for dst, caps in moves.items() if caps}
+            for (dr, dc), caps in moves.items():
+                key = f"{piece.row},{piece.col}->{dr},{dc}"
+                acts.append(key)
+        return acts
 
-        for dr, dc in directions:
-            r, c = piece.row + dr, piece.col + dc
-            # Simple move
-            if 0 <= r < self.rows and 0 <= c < self.cols and self.grid[r][c] is None:
-                moves[(r, c)] = []
-            # Capture move?
-            elif 0 <= r < self.rows and 0 <= c < self.cols \
-                 and self.grid[r][c] is not None \
-                 and self.grid[r][c].color != piece.color:
-                jump_r, jump_c = r + dr, c + dc
-                if 0 <= jump_r < self.rows and 0 <= jump_c < self.cols \
-                   and self.grid[jump_r][jump_c] is None:
-                    # record the single jumped-over piece
-                    moves[(jump_r, jump_c)] = [(r, c)]
-        return moves
+    def choose_action(self, board):
+        """Epsilon-greedy selection over current Q."""
+        state = self.get_state(board)
+        actions = self.available_actions(board)
+        # init Q[state] if unseen
+        if state not in self.Q:
+            self.Q[state] = {a: 0.0 for a in actions}
+        # ensure new actions are in Q[state]
+        for a in actions:
+            if a not in self.Q[state]:
+                self.Q[state][a] = 0.0
 
-    def move_piece(self, piece, dest_row, dest_col):
+        # exploration vs exploitation
+        if random.random() < self.epsilon:
+            return random.choice(actions)
+        # pick best-Q action (break ties randomly)
+        qvals = self.Q[state]
+        maxq = max(qvals[a] for a in actions)
+        best = [a for a in actions if qvals[a] == maxq]
+        return random.choice(best)
+
+    def learn(self, old_state, action, reward, new_state, done):
         """
-        Move `piece` to (dest_row,dest_col), remove any captured pieces,
-        promote to king if needed, and return a list of captured Piece(s).
+        Update Q-table using Bellman equation.
+        - old_state, new_state: state strings
+        - action: action_str taken from old_state
+        - reward: numeric reward
+        - done: True if new_state is terminal
         """
-        captured = []
-        dr = dest_row - piece.row
-        dc = dest_col - piece.col
+        # init entries if missing
+        if old_state not in self.Q:
+            self.Q[old_state] = {}
+        if action not in self.Q[old_state]:
+            self.Q[old_state][action] = 0.0
 
-        # If it’s a jump (abs(dr)==2), remove the jumped piece
-        if abs(dr) == 2 and abs(dc) == 2:
-            mid_r = piece.row + dr // 2
-            mid_c = piece.col + dc // 2
-            captured_piece = self.grid[mid_r][mid_c]
-            self.grid[mid_r][mid_c] = None
-            captured.append(captured_piece)
+        old_q = self.Q[old_state][action]
+        # estimate best future Q
+        future_q = 0.0
+        if not done and new_state in self.Q and self.Q[new_state]:
+            future_q = max(self.Q[new_state].values())
 
-        # Move the piece
-        self.grid[piece.row][piece.col] = None
-        piece.row, piece.col = dest_row, dest_col
-        self.grid[dest_row][dest_col] = piece
+        # Q-learning update
+        self.Q[old_state][action] = old_q + self.alpha * (
+            reward + self.gamma * future_q - old_q
+        )
 
-        # King promotion: if piece reaches the far row
-        if (piece.color == "red"   and dest_row == 0) \
-        or (piece.color == "black" and dest_row == self.rows - 1):
-            piece.make_king()
+        # decay epsilon at end of episode
+        if done and self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
 
-        return captured
-    def get_all_pieces(self, color):
-        """Return a list of all Piece instances of the given color."""
-        pieces = []
-        for row in self.grid:
-            for piece in row:
-                if piece and piece.color == color:
-                    pieces.append(piece)
-        return pieces
+    def save(self, filename):
+        """Pickle your Q-table to disk."""
+        with open(filename, 'wb') as f:
+            pickle.dump(self.Q, f)
 
-    def has_capture(self, color):
+    def load(self, filename):
+        """Load a pickled Q-table."""
+        with open(filename, 'rb') as f:
+            self.Q = pickle.load(f)
+            # after loading, you might set epsilon low for exploitation:
+            self.epsilon = self.epsilon_min
+    def choose_piece_action(self, board, piece):
         """
-        Return True if any piece of `color` has at least one capture move.
+        Like choose_action, but restricts to moves *from* this one piece.
+        Returns an action_str “sr,sc->dr,dc” for a capture jump.
         """
-        for piece in self.get_all_pieces(color):
-            for caps in self.get_valid_moves(piece).values():
-                if caps:  # non-empty list → capture exists
-                    return True
-        return False
-    def encode_state(self):
-        """
-        Return a string encoding of the board:
-        '.' empty, 'r' red man, 'R' red king, 'b' black man, 'B' black king.
-        Row by row, left to right, top to bottom.
-        """
-        symbols = []
-        for r in range(self.rows):
-            for c in range(self.cols):
-                p = self.grid[r][c]
-                if p is None:
-                    symbols.append('.')
-                else:
-                    if p.color == "red":
-                        symbols.append('R' if p.king else 'r')
-                    else:
-                        symbols.append('B' if p.king else 'b')
-        return ''.join(symbols)
-    def check_winner(self):
-        """
-        Return "red" if red wins, "black" if black wins, or None if game is still on.
-        A side loses when it has no pieces or no legal moves left.
-        """
-        # no pieces → opponent wins
-        if not self.get_all_pieces("red"):
-            return "black"
-        if not self.get_all_pieces("black"):
-            return "red"
+        state = self.get_state(board)
+        # Get *all* capture actions (because multi-jump only occurs when captures exist)
+        must_capture = True
+        # Filter available actions to those that start at this piece
+        all_actions = self.available_actions(board)  # this already enforces must_capture if True
+        prefix = f"{piece.row},{piece.col}->"
+        piece_actions = [a for a in all_actions if a.startswith(prefix)]
+        if not piece_actions:
+            return None
 
-        # no legal moves → opponent wins
-        red_moves   = any(self.get_valid_moves(p) for p in self.get_all_pieces("red"))
-        black_moves = any(self.get_valid_moves(p) for p in self.get_all_pieces("black"))
-        if not red_moves:
-            return "black"
-        if not black_moves:
-            return "red"
+        # Epsilon-greedy over this subset
+        # Initialize Q entries if missing
+        if state not in self.Q:
+            self.Q[state] = {}
+        for a in piece_actions:
+            self.Q[state].setdefault(a, 0.0)
 
-        return None
+        if random.random() < self.epsilon:
+            return random.choice(piece_actions)
+        # Exploit: pick max-Q action among piece_actions
+        qvals = self.Q[state]
+        best_q = max(qvals[a] for a in piece_actions)
+        best = [a for a in piece_actions if qvals[a] == best_q]
+        return random.choice(best)
