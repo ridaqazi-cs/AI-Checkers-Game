@@ -95,7 +95,7 @@ When a side wins:
 ├── README.md                 # How to use
 ├── Project Report.pdf        # Workings and findings
 ├── Project Proposal.docx     # Initial proposal 
-├── Demo.mp4                  # Recorded voiceover 
+├── Demo Video Link.pdf       # Recorded voiceover 
 ```
 
 ---
